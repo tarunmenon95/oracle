@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, nativeImage } from 'electron'
+import { app, BrowserWindow, Menu, shell, nativeImage } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 import { registerIpcHandlers } from './ipc'
@@ -7,6 +7,8 @@ import { startScheduler } from './scraper/scheduler'
 import { startDevMock } from './dev-mock'
 
 let mainWindow: BrowserWindow | null = null
+
+const isMac = process.platform === 'darwin'
 
 function createWindow(): void {
   const iconPath = join(__dirname, '../../resources/icon.png')
@@ -17,7 +19,16 @@ function createWindow(): void {
     minWidth: 960,
     minHeight: 640,
     title: 'Oracle',
-    titleBarStyle: 'hiddenInset',
+    titleBarStyle: isMac ? 'hiddenInset' : 'hidden',
+    ...(isMac
+      ? {}
+      : {
+          titleBarOverlay: {
+            color: '#060714',
+            symbolColor: '#e4e4f0',
+            height: 36
+          }
+        }),
     icon: nativeImage.createFromPath(iconPath),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -28,6 +39,10 @@ function createWindow(): void {
     backgroundColor: '#060714',
     center: true
   })
+
+  if (!isMac) {
+    Menu.setApplicationMenu(null)
+  }
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
