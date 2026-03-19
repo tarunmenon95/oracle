@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#0c0e24"/>
+      <stop offset="100%" stop-color="#060714"/>
+    </radialGradient>
+    <radialGradient id="iris" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f0d68a"/>
+      <stop offset="50%" stop-color="#c8aa6e"/>
+      <stop offset="100%" stop-color="#8b6914"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c8aa6e" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#c8aa6e" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="eyeGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="20" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="outerGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="40" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
+
+  <!-- Subtle radial glow behind eye -->
+  <circle cx="512" cy="512" r="320" fill="url(#glow)"/>
+
+  <!-- Eye shape (almond) -->
+  <g filter="url(#outerGlow)">
+    <path d="M 160 512 Q 512 260 864 512 Q 512 764 160 512 Z"
+          fill="none" stroke="#c8aa6e" stroke-width="12" opacity="0.3"/>
+  </g>
+  <g filter="url(#eyeGlow)">
+    <path d="M 200 512 Q 512 300 824 512 Q 512 724 200 512 Z"
+          fill="none" stroke="#c8aa6e" stroke-width="8"/>
+  </g>
+
+  <!-- Iris outer ring -->
+  <circle cx="512" cy="512" r="130" fill="none" stroke="#c8aa6e" stroke-width="6" opacity="0.6"/>
+
+  <!-- Iris fill -->
+  <circle cx="512" cy="512" r="120" fill="url(#iris)" opacity="0.9"/>
+
+  <!-- Iris detail lines -->
+  <g opacity="0.3" stroke="#8b6914" stroke-width="2">
+    <line x1="512" y1="392" x2="512" y2="440"/>
+    <line x1="512" y1="584" x2="512" y2="632"/>
+    <line x1="392" y1="512" x2="440" y2="512"/>
+    <line x1="584" y1="512" x2="632" y2="512"/>
+    <line x1="427" y1="427" x2="460" y2="460"/>
+    <line x1="564" y1="564" x2="597" y2="597"/>
+    <line x1="597" y1="427" x2="564" y2="460"/>
+    <line x1="460" y1="564" x2="427" y2="597"/>
+  </g>
+
+  <!-- Pupil -->
+  <circle cx="512" cy="512" r="50" fill="#060714"/>
+  <circle cx="512" cy="512" r="52" fill="none" stroke="#c8aa6e" stroke-width="2" opacity="0.5"/>
+
+  <!-- Pupil highlight -->
+  <circle cx="530" cy="494" r="14" fill="#f0d68a" opacity="0.7"/>
+  <circle cx="496" cy="524" r="6" fill="#f0d68a" opacity="0.4"/>
+
+  <!-- Upper eyelid shadow -->
+  <path d="M 200 512 Q 512 300 824 512"
+        fill="none" stroke="#c8aa6e" stroke-width="4" opacity="0.15"/>
+
+  <!-- Lower eyelid accent -->
+  <path d="M 280 512 Q 512 680 744 512"
+        fill="none" stroke="#c8aa6e" stroke-width="2" opacity="0.2"/>
+</svg>
