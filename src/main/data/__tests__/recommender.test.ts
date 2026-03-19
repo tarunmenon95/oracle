@@ -239,6 +239,9 @@ describe('computeRecommendations', () => {
     const result = computeRecommendations('top', [{ championId: 122, championName: 'Darius' }])
     expect(result.length).toBe(1)
     expect(result[0].championName).toBe('Aatrox')
+    expect(result[0].personalGames).toBe(0)
+    expect(result[0].personalWinRate).toBeNull()
+    expect(result[0].personalKda).toBeNull()
   })
 
   it('defaults to 50 WR when no matchup data exists', () => {
@@ -346,5 +349,51 @@ describe('computeRecommendations', () => {
     const result = computeRecommendations('top', [{ championId: 122, championName: 'Darius' }])
     expect(result[0].matchups[0].laneKillRate).toBe(52.3)
     expect(result[0].matchups[0].goldAdv15).toBe(150)
+  })
+
+  it('comfort bonus breaks ties when matchup scores are equal', () => {
+    mockGetChampionPool.mockReturnValue([
+      { champion: 'Aatrox', lanes: 'top', masteryPoints: 0, gamesPlayed: 100, winRate: 60, kda: 3.0 },
+      { champion: 'Fiora', lanes: 'top', masteryPoints: 0, gamesPlayed: 5, winRate: 48, kda: 1.5 }
+    ])
+    mockGetChampionRoles.mockReturnValue([])
+    setupMockDb([
+      { champion: 'Aatrox', opponent: 'Darius', win_rate: 50, games_played: 500, lane_kill_rate: null, gold_adv_15: null, source: 'opgg' },
+      { champion: 'Fiora', opponent: 'Darius', win_rate: 50, games_played: 500, lane_kill_rate: null, gold_adv_15: null, source: 'opgg' }
+    ])
+
+    const result = computeRecommendations('top', [{ championId: 122, championName: 'Darius' }])
+    expect(result[0].championName).toBe('Aatrox')
+    expect(result[0].score).toBeGreaterThan(result[1].score)
+    expect(result[0].personalWinRate).toBe(60)
+    expect(result[0].personalGames).toBe(100)
+    expect(result[0].personalKda).toBe(3.0)
+  })
+
+  it('comfort bonus does not override a large matchup advantage', () => {
+    mockGetChampionPool.mockReturnValue([
+      { champion: 'Aatrox', lanes: 'top', masteryPoints: 0, gamesPlayed: 100, winRate: 65, kda: 4.0 },
+      { champion: 'Fiora', lanes: 'top', masteryPoints: 0, gamesPlayed: 0, winRate: null, kda: null }
+    ])
+    mockGetChampionRoles.mockReturnValue([])
+    setupMockDb([
+      { champion: 'Aatrox', opponent: 'Darius', win_rate: 45, games_played: 500, lane_kill_rate: null, gold_adv_15: null, source: 'opgg' },
+      { champion: 'Fiora', opponent: 'Darius', win_rate: 55, games_played: 500, lane_kill_rate: null, gold_adv_15: null, source: 'opgg' }
+    ])
+
+    const result = computeRecommendations('top', [{ championId: 122, championName: 'Darius' }])
+    expect(result[0].championName).toBe('Fiora')
+    expect(result[0].score).toBeGreaterThan(result[1].score)
+  })
+
+  it('comfort bonus is zero when games played is below 5', () => {
+    mockGetChampionPool.mockReturnValue([
+      { champion: 'Aatrox', lanes: 'top', masteryPoints: 0, gamesPlayed: 3, winRate: 70, kda: 5.0 }
+    ])
+    mockGetChampionRoles.mockReturnValue([])
+    setupMockDb([])
+
+    const result = computeRecommendations('top', [{ championId: 122, championName: 'Darius' }])
+    expect(result[0].score).toBe(50)
   })
 })

@@ -200,7 +200,12 @@ function IdentityStep({ settings, onChange, onContinue, onSkip }: {
   onContinue: () => void
   onSkip: () => void
 }) {
+  const [availablePatches, setAvailablePatches] = useState<string[]>([])
   const canContinue = settings.summonerName.trim().length > 0
+
+  useEffect(() => {
+    window.api.getAvailablePatches().then(setAvailablePatches)
+  }, [])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -250,15 +255,30 @@ function IdentityStep({ settings, onChange, onContinue, onSkip }: {
           </div>
         </div>
 
-        <div>
-          <label style={labelStyle}>Region</label>
-          <select
-            style={inputStyle}
-            value={settings.region}
-            onChange={(e) => onChange({ ...settings, region: e.target.value })}
-          >
-            {REGIONS.map((r) => <option key={r} value={r}>{r.toUpperCase()}</option>)}
-          </select>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ flex: 1 }}>
+            <label style={labelStyle}>Region</label>
+            <select
+              style={inputStyle}
+              value={settings.region}
+              onChange={(e) => onChange({ ...settings, region: e.target.value })}
+            >
+              {REGIONS.map((r) => <option key={r} value={r}>{r.toUpperCase()}</option>)}
+            </select>
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={labelStyle}>Patch</label>
+            <select
+              style={inputStyle}
+              value={settings.selectedPatch}
+              onChange={(e) => onChange({ ...settings, selectedPatch: e.target.value })}
+            >
+              <option value="">Latest</option>
+              {availablePatches.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -455,7 +475,7 @@ function PoolStep({ skippedIdentity, onContinue, onBack }: {
                     <div style={{ fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {entry.champion}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px', flexWrap: 'wrap' }}>
                       {laneList.map((l, i) => (
                         <span key={l} style={{ display: 'inline-flex', alignItems: 'center', gap: '1px' }}>
                           {i > 0 && <span style={{ color: 'var(--text-muted)', fontSize: '9px', margin: '0 1px' }}>/</span>}
@@ -463,7 +483,22 @@ function PoolStep({ skippedIdentity, onContinue, onBack }: {
                         </span>
                       ))}
                       {entry.gamesPlayed > 0 && (
-                        <span style={{ color: 'var(--text-muted)', fontSize: '10px', marginLeft: '4px' }}>{entry.gamesPlayed}g</span>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '10px', marginLeft: '4px' }}>{entry.gamesPlayed} games</span>
+                      )}
+                      {entry.winRate != null && (
+                        <span style={{
+                          fontSize: '10px',
+                          marginLeft: '4px',
+                          color: entry.winRate >= 50 ? 'var(--accent-green)' : 'var(--accent-red)',
+                          fontWeight: 600
+                        }}>
+                          {entry.winRate.toFixed(0)}% WR
+                        </span>
+                      )}
+                      {entry.kda != null && (
+                        <span style={{ color: 'var(--text-muted)', fontSize: '10px', marginLeft: '2px' }}>
+                          {entry.kda.toFixed(1)} KDA
+                        </span>
                       )}
                     </div>
                   </div>

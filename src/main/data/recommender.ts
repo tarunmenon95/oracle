@@ -13,6 +13,9 @@ interface Recommendation {
   championIcon: string
   score: number
   matchups: MatchupDetail[]
+  personalWinRate: number | null
+  personalGames: number
+  personalKda: number | null
 }
 
 interface MatchupDetail {
@@ -135,14 +138,29 @@ export function computeRecommendations(lane: string, enemyPicks: EnemyPick[]): R
     }
 
     const avgScore = totalWeight > 0 ? totalScore / totalWeight : 50
+
+    let comfortBonus = 0
+    if (poolEntry.winRate != null && poolEntry.gamesPlayed >= 5) {
+      const wrEdge = (poolEntry.winRate - 50) / 100
+      const expFactor = Math.min(poolEntry.gamesPlayed / 50, 1)
+      comfortBonus = wrEdge * expFactor * 1.5
+    }
+    if (poolEntry.gamesPlayed >= 5) {
+      comfortBonus += Math.min(poolEntry.gamesPlayed / 100, 1) * 0.75
+    }
+
+    const finalScore = avgScore + comfortBonus
     const internalId = getChampionInternalId(poolEntry.champion)
 
     recommendations.push({
       championId: getChampionIdByName(poolEntry.champion),
       championName: poolEntry.champion,
       championIcon: `${DDRAGON_BASE}/${patch}/img/champion/${internalId}.png`,
-      score: avgScore,
-      matchups
+      score: finalScore,
+      matchups,
+      personalWinRate: poolEntry.winRate ?? null,
+      personalGames: poolEntry.gamesPlayed,
+      personalKda: poolEntry.kda ?? null
     })
   }
 

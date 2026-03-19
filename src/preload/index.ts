@@ -26,6 +26,9 @@ export type Recommendation = {
   championInternalId?: string
   score: number
   matchups: MatchupDetail[]
+  personalWinRate: number | null
+  personalGames: number
+  personalKda: number | null
 }
 
 export type MatchupDetail = {
@@ -44,6 +47,8 @@ export type ChampionPoolEntry = {
   lanes: string
   masteryPoints: number
   gamesPlayed: number
+  winRate: number | null
+  kda: number | null
 }
 
 export type AppSettings = {
@@ -57,6 +62,10 @@ export type AppSettings = {
 export type ConnectionStatus = 'disconnected' | 'connected' | 'in-champ-select'
 
 const api = {
+  isDev: process.env.NODE_ENV === 'development' || !!process.env['ELECTRON_RENDERER_URL'],
+  platform: process.platform as 'darwin' | 'win32' | 'linux',
+
+
   onDraftUpdate: (callback: (state: DraftState) => void) => {
     const sub = (_: Electron.IpcRendererEvent, state: DraftState) => callback(state)
     ipcRenderer.on('draft:update', sub)

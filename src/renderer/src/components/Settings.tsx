@@ -5,12 +5,13 @@ import { championIcon, nameToInternalId, laneIcon } from '../utils/ddragon'
 type Props = {
   onBack: () => void
   onRerunSetup: () => void
+  onPatchChange?: (patch: string) => void
 }
 
 const REGIONS = ['na', 'euw', 'eune', 'kr', 'jp', 'br', 'lan', 'las', 'oce', 'tr', 'ru', 'ph', 'sg', 'th', 'tw', 'vn']
 const LANES = ['top', 'jungle', 'mid', 'bottom', 'support']
 
-export function Settings({ onBack, onRerunSetup }: Props) {
+export function Settings({ onBack, onRerunSetup, onPatchChange }: Props) {
   const [settings, setSettings] = useState<AppSettings>({ summonerName: '', tagline: '', region: 'na', selectedPatch: '', onboardingComplete: true })
   const [pool, setPool] = useState<ChampionPoolEntry[]>([])
   const [allChampions, setAllChampions] = useState<{ id: number; name: string; icon: string }[]>([])
@@ -140,6 +141,7 @@ export function Settings({ onBack, onRerunSetup }: Props) {
                       const updated = { ...settings, selectedPatch: e.target.value }
                       setSettings(updated)
                       await window.api.saveSettings(updated)
+                      onPatchChange?.(e.target.value)
                     }}
                   >
                     <option value="">Latest</option>
@@ -228,7 +230,7 @@ export function Settings({ onBack, onRerunSetup }: Props) {
                         }}>
                           {entry.champion}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexWrap: 'wrap' }}>
                           {laneList.map((l, i) => (
                             <span key={l} style={{ display: 'inline-flex', alignItems: 'center', gap: '1px' }}>
                               {i > 0 && <span style={{ color: 'var(--text-muted)', fontSize: '9px', margin: '0 1px' }}>/</span>}
@@ -244,7 +246,22 @@ export function Settings({ onBack, onRerunSetup }: Props) {
                           ))}
                           {entry.gamesPlayed > 0 && (
                             <span style={{ color: 'var(--text-muted)', fontSize: '10px', marginLeft: '4px' }}>
-                              {entry.gamesPlayed}g
+                              {entry.gamesPlayed} games
+                            </span>
+                          )}
+                          {entry.winRate != null && (
+                            <span style={{
+                              fontSize: '10px',
+                              marginLeft: '4px',
+                              color: entry.winRate >= 50 ? 'var(--accent-green)' : 'var(--accent-red)',
+                              fontWeight: 600
+                            }}>
+                              {entry.winRate.toFixed(0)}% WR
+                            </span>
+                          )}
+                          {entry.kda != null && (
+                            <span style={{ color: 'var(--text-muted)', fontSize: '10px', marginLeft: '2px' }}>
+                              {entry.kda.toFixed(1)} KDA
                             </span>
                           )}
                         </div>

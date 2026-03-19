@@ -21,7 +21,7 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('pool:get', () => {
     const db = getDb()
-    return db.prepare('SELECT champion, lanes, mastery_points as masteryPoints, games_played as gamesPlayed FROM champion_pool').all()
+    return db.prepare('SELECT champion, lanes, mastery_points as masteryPoints, games_played as gamesPlayed, win_rate as winRate, kda FROM champion_pool').all()
   })
 
   ipcMain.handle('pool:add', (_, champion: string, lane: string) => {

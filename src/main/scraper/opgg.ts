@@ -230,10 +230,10 @@ export async function syncChampionPool(summonerName: string, tagline: string, re
 
   const db = getDb()
   const insertStmt = db.prepare(
-    'INSERT OR REPLACE INTO champion_pool (summoner_id, champion, lanes, mastery_points, games_played) VALUES (?, ?, ?, 0, ?)'
+    'INSERT OR REPLACE INTO champion_pool (summoner_id, champion, lanes, mastery_points, games_played, win_rate, kda) VALUES (?, ?, ?, 0, ?, ?, ?)'
   )
 
-  const entries: { champion: string; lanes: string; games: number }[] = []
+  const entries: { champion: string; lanes: string; games: number; winRate: number | null; kda: number | null }[] = []
 
   for (const stat of championStats) {
     if (stat.id === 0 || !stat.id) continue
@@ -242,22 +242,30 @@ export async function syncChampionPool(summonerName: string, tagline: string, re
     if (!championName || championName.startsWith('Champion(')) continue
 
     const games = stat.play ?? 0
-    if (games < 3) continue
+    if (games < 5) continue
+
+    const wins = stat.win ?? 0
+    const winRate = games > 0 ? (wins / games) * 100 : null
+
+    const kills = stat.kill ?? 0
+    const deaths = stat.death ?? 0
+    const assists = stat.assist ?? 0
+    const kda = deaths > 0 ? (kills + assists) / deaths : kills + assists > 0 ? kills + assists : null
 
     const lanes = inferLanesFromStats(stat, championName)
-    entries.push({ champion: championName, lanes: lanes.join(','), games })
+    entries.push({ champion: championName, lanes: lanes.join(','), games, winRate, kda })
   }
 
   if (entries.length > 0) {
     const insertMany = db.transaction((rows: typeof entries) => {
       for (const entry of rows) {
-        insertStmt.run('local', entry.champion, entry.lanes, entry.games)
+        insertStmt.run('local', entry.champion, entry.lanes, entry.games, entry.winRate, entry.kda)
       }
     })
     insertMany(entries)
     console.log(`Synced ${entries.length} champion pool entries from op.gg`)
   } else {
-    console.warn('No champion pool entries found with >= 3 games')
+    console.warn('No champion pool entries found with >= 5 games')
   }
 }
 

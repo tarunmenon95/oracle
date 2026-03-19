@@ -232,6 +232,9 @@ function FeaturedCard({ rec, isSelected, onSelect }: { rec: Recommendation; isSe
               <MatchupPill key={m.enemyChampionId} matchup={m} />
             ))}
           </div>
+          {rec.personalGames >= 5 && (
+            <PersonalStatsBadge rec={rec} />
+          )}
         </div>
 
         {/* Score */}
@@ -323,11 +326,16 @@ function CompactCard({ rec, rank, delay, isSelected, onSelect }: {
       {/* Name + matchups */}
       <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
         <div style={{ fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>{rec.championName}</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', alignItems: 'center' }}>
           {rec.matchups.map((m) => (
             <MatchupPill key={m.enemyChampionId} matchup={m} compact />
           ))}
         </div>
+        {rec.personalGames >= 5 && (
+          <div style={{ marginTop: '3px' }}>
+            <PersonalStatsBadge rec={rec} compact />
+          </div>
+        )}
       </div>
 
       {/* Score */}
@@ -397,6 +405,55 @@ function MatchupPill({ matchup, compact }: { matchup: MatchupDetail; compact?: b
           ({matchup.gamesPlayed})
         </span>
       )}
+    </div>
+  )
+}
+
+function PersonalStatsBadge({ rec, compact }: { rec: Recommendation; compact?: boolean }) {
+  const wrGood = rec.personalWinRate != null && rec.personalWinRate >= 50
+  const sep = <span style={{ color: 'var(--border-light)', margin: '0 1px' }}>·</span>
+
+  return (
+    <div
+      title="Your personal stats on this champion"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: compact ? '4px' : '6px',
+        marginTop: compact ? 0 : '6px',
+        fontSize: compact ? '9px' : '10px',
+        fontWeight: 500,
+        color: 'var(--text-muted)'
+      }}
+    >
+      <span style={{
+        fontSize: compact ? '8px' : '9px',
+        fontWeight: 700,
+        color: 'var(--accent-gold)',
+        letterSpacing: '1px',
+        textTransform: 'uppercase' as const
+      }}>
+        You
+      </span>
+      {rec.personalWinRate != null && (
+        <>
+          <span style={{ color: wrGood ? 'var(--accent-green)' : 'var(--accent-red)', fontWeight: 600 }}>
+            {rec.personalWinRate.toFixed(0)}% WR
+          </span>
+          {(rec.personalKda != null || !compact) && sep}
+        </>
+      )}
+      {rec.personalKda != null && !compact && (
+        <>
+          <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
+            {rec.personalKda.toFixed(1)} KDA
+          </span>
+          {sep}
+        </>
+      )}
+      <span style={{ color: 'var(--text-muted)' }}>
+        {rec.personalGames} games
+      </span>
     </div>
   )
 }

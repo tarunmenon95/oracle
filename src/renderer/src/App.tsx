@@ -14,6 +14,7 @@ type View = 'setup' | 'main' | 'settings'
 export default function App() {
   const [view, setView] = useState<View | null>(null)
   const [selectedRec, setSelectedRec] = useState<Recommendation | null>(null)
+  const [selectedPatch, setSelectedPatch] = useState('')
   const { draftState, recommendations, connectionStatus, scraperProgress, patch } = useDraftState()
 
   const inDraft = connectionStatus === 'in-champ-select' && draftState
@@ -21,6 +22,7 @@ export default function App() {
   useEffect(() => {
     window.api.getSettings().then((s) => {
       setView(s.onboardingComplete ? 'main' : 'setup')
+      setSelectedPatch(s.selectedPatch)
     })
   }, [])
 
@@ -46,12 +48,13 @@ export default function App() {
         onSettingsClick={() => setView(view === 'settings' ? 'main' : 'settings')}
         scraperProgress={scraperProgress}
         patch={patch}
+        selectedPatch={selectedPatch}
         isSettings={view === 'settings'}
       />
 
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
         {view === 'settings' ? (
-          <Settings onBack={() => setView('main')} onRerunSetup={() => setView('setup')} />
+          <Settings onBack={() => setView('main')} onRerunSetup={() => setView('setup')} onPatchChange={setSelectedPatch} />
         ) : inDraft ? (
           <div style={{
             display: 'flex',

@@ -34,6 +34,8 @@ export function getDb(): Database.Database {
       lanes TEXT NOT NULL DEFAULT 'mid',
       mastery_points INTEGER NOT NULL DEFAULT 0,
       games_played INTEGER NOT NULL DEFAULT 0,
+      win_rate REAL,
+      kda REAL,
       PRIMARY KEY (summoner_id, champion)
     );
 
@@ -84,6 +86,14 @@ export function getDb(): Database.Database {
     for (const entry of grouped.values()) {
       ins.run(entry.summoner_id, entry.champion, [...entry.lanes].join(','), entry.mastery_points, entry.games_played)
     }
+  }
+
+  const poolColsAfter = db.pragma('table_info(champion_pool)') as { name: string }[]
+  if (!poolColsAfter.some((c) => c.name === 'win_rate')) {
+    db.exec('ALTER TABLE champion_pool ADD COLUMN win_rate REAL')
+  }
+  if (!poolColsAfter.some((c) => c.name === 'kda')) {
+    db.exec('ALTER TABLE champion_pool ADD COLUMN kda REAL')
   }
 
   const cols = db.pragma('table_info(matchups)') as { name: string }[]
@@ -155,14 +165,14 @@ export function getChampionRoles(champion: string): { lane: string; pickRate: nu
   ).all(champion) as { lane: string; pickRate: number }[]
 }
 
-export function getChampionPool(lane?: string): { champion: string; lanes: string; masteryPoints: number; gamesPlayed: number }[] {
+export function getChampionPool(lane?: string): { champion: string; lanes: string; masteryPoints: number; gamesPlayed: number; winRate: number | null; kda: number | null }[] {
   const database = getDb()
   if (lane) {
     return database.prepare(
-      "SELECT champion, lanes, mastery_points as masteryPoints, games_played as gamesPlayed FROM champion_pool WHERE ',' || lanes || ',' LIKE '%,' || ? || ',%'"
+      "SELECT champion, lanes, mastery_points as masteryPoints, games_played as gamesPlayed, win_rate as winRate, kda FROM champion_pool WHERE ',' || lanes || ',' LIKE '%,' || ? || ',%'"
     ).all(lane) as any[]
   }
   return database.prepare(
-    'SELECT champion, lanes, mastery_points as masteryPoints, games_played as gamesPlayed FROM champion_pool'
+    'SELECT champion, lanes, mastery_points as masteryPoints, games_played as gamesPlayed, win_rate as winRate, kda FROM champion_pool'
   ).all() as any[]
 }

@@ -76,7 +76,9 @@ function createMockDb() {
             champion: r.champion,
             lanes: r.lanes,
             masteryPoints: r.mastery_points,
-            gamesPlayed: r.games_played
+            gamesPlayed: r.games_played,
+            winRate: r.win_rate ?? null,
+            kda: r.kda ?? null
           }))
         }
 
@@ -275,9 +277,9 @@ describe('getChampionRoles', () => {
 describe('getChampionPool', () => {
   beforeEach(() => {
     mockDb._tables.champion_pool.push(
-      { summoner_id: 'local', champion: 'Aatrox', lanes: 'top,mid', mastery_points: 50000, games_played: 100 },
-      { summoner_id: 'local', champion: 'Darius', lanes: 'top', mastery_points: 30000, games_played: 80 },
-      { summoner_id: 'local', champion: 'Zed', lanes: 'mid', mastery_points: 20000, games_played: 60 }
+      { summoner_id: 'local', champion: 'Aatrox', lanes: 'top,mid', mastery_points: 50000, games_played: 100, win_rate: 58.0, kda: 2.5 },
+      { summoner_id: 'local', champion: 'Darius', lanes: 'top', mastery_points: 30000, games_played: 80, win_rate: 52.0, kda: 1.8 },
+      { summoner_id: 'local', champion: 'Zed', lanes: 'mid', mastery_points: 20000, games_played: 60, win_rate: null, kda: null }
     )
   })
 
@@ -314,5 +316,14 @@ describe('getChampionPool', () => {
     expect(aatrox.lanes).toBe('top,mid')
     expect(aatrox.masteryPoints).toBe(50000)
     expect(aatrox.gamesPlayed).toBe(100)
+    expect(aatrox.winRate).toBe(58.0)
+    expect(aatrox.kda).toBe(2.5)
+  })
+
+  it('returns null for winRate and kda when not set', () => {
+    const pool = getChampionPool()
+    const zed = pool.find((p) => p.champion === 'Zed')!
+    expect(zed.winRate).toBeNull()
+    expect(zed.kda).toBeNull()
   })
 })
