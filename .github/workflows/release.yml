@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  build:
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -32,7 +32,6 @@ jobs:
 
       - name: Run tests
         run: npm test -- --run
-        continue-on-error: true
 
       - name: Package application (macOS)
         if: matrix.os == 'macos-latest'
@@ -51,23 +50,40 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: oracle-macos
-          path: release/*.dmg
+          path: |
+            release/*.dmg
+            release/*.zip
 
       - name: Upload artifacts (Windows)
         if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
           name: oracle-windows
-          path: release/*.exe
+          path: |
+            release/*.exe
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Download macOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: oracle-macos
+          path: artifacts
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: oracle-windows
+          path: artifacts
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: |
-            release/*.dmg
-            release/*.exe
-            release/*.zip
+          files: artifacts/*
           draft: false
           prerelease: false
           generate_release_notes: true
