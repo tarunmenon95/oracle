@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { join } from 'path'
 
 const mockFs: Record<string, string> = {}
 let mockUserDataPath = '/mock/userData'
@@ -22,6 +23,10 @@ vi.mock('fs', () => ({
 }))
 
 import { patchToOpgg, patchToUgg, getSettings, saveSettings, getAvailablePatches } from '../settings'
+
+function settingsPath(): string {
+  return join(mockUserDataPath, 'settings.json')
+}
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -81,8 +86,7 @@ describe('getSettings', () => {
   })
 
   it('merges saved values with defaults', () => {
-    const settingsPath = `${mockUserDataPath}/settings.json`
-    mockFs[settingsPath] = JSON.stringify({ summonerName: 'TestUser', region: 'euw' })
+    mockFs[settingsPath()] = JSON.stringify({ summonerName: 'TestUser', region: 'euw' })
     const settings = getSettings()
     expect(settings.summonerName).toBe('TestUser')
     expect(settings.region).toBe('euw')
@@ -91,8 +95,7 @@ describe('getSettings', () => {
   })
 
   it('returns defaults on malformed JSON', () => {
-    const settingsPath = `${mockUserDataPath}/settings.json`
-    mockFs[settingsPath] = '{broken json'
+    mockFs[settingsPath()] = '{broken json'
     const settings = getSettings()
     expect(settings.region).toBe('na')
   })
@@ -108,9 +111,8 @@ describe('saveSettings', () => {
       onboardingComplete: true
     }
     saveSettings(settings)
-    const settingsPath = `${mockUserDataPath}/settings.json`
-    expect(mockFs[settingsPath]).toBeDefined()
-    const written = JSON.parse(mockFs[settingsPath])
+    expect(mockFs[settingsPath()]).toBeDefined()
+    const written = JSON.parse(mockFs[settingsPath()])
     expect(written.summonerName).toBe('Player1')
     expect(written.onboardingComplete).toBe(true)
   })
