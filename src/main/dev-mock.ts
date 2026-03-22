@@ -86,6 +86,27 @@ const SCENARIOS: MockScenario[] = [
     theirBans: [86, 24, 420, 240, 58]
   },
   {
+    label: 'Mid — Diana locked in vs Zed + Lee Sin',
+    assignedPosition: 'middle',
+    localPlayerCellId: 2,
+    myTeam: [
+      { cellId: 0, championId: 86, championName: 'Garen', summonerId: 1, assignedPosition: 'top', championInternalId: 'Garen' },
+      { cellId: 1, championId: 120, championName: 'Hecarim', summonerId: 2, assignedPosition: 'jungle', championInternalId: 'Hecarim' },
+      { cellId: 2, championId: 131, championName: 'Diana', summonerId: 3, assignedPosition: 'middle', championInternalId: 'Diana' },
+      { cellId: 3, championId: 51, championName: 'Caitlyn', summonerId: 4, assignedPosition: 'bottom', championInternalId: 'Caitlyn' },
+      { cellId: 4, championId: 412, championName: 'Thresh', summonerId: 5, assignedPosition: 'utility', championInternalId: 'Thresh' }
+    ],
+    theirTeam: [
+      { cellId: 5, championId: 39, championName: 'Irelia', summonerId: 6, assignedPosition: 'top', championInternalId: 'Irelia' },
+      { cellId: 6, championId: 64, championName: 'Lee Sin', summonerId: 7, assignedPosition: 'jungle', championInternalId: 'LeeSin' },
+      { cellId: 7, championId: 238, championName: 'Zed', summonerId: 8, assignedPosition: 'middle', championInternalId: 'Zed' },
+      { cellId: 8, championId: 67, championName: 'Vayne', summonerId: 9, assignedPosition: 'bottom', championInternalId: 'Vayne' },
+      { cellId: 9, championId: 0, championName: '', summonerId: 10, assignedPosition: 'utility', championInternalId: '' }
+    ],
+    myBans: [157, 777, 234, 55, 523],
+    theirBans: [245, 131, 7, 84, 91]
+  },
+  {
     label: 'ADC — Draven bot + Tristana flex',
     assignedPosition: 'bottom',
     localPlayerCellId: 3,
@@ -142,6 +163,7 @@ export function sendMockDraft(): void {
   const enemyPicks = filterEnemiesByLane(theirTeam, lane)
   const pickedNames = new Set<string>()
   for (const m of [...scenario.myTeam, ...theirTeam]) {
+    if (m.cellId === scenario.localPlayerCellId) continue
     if (m.championId > 0 && m.championName) pickedNames.add(m.championName)
   }
   const recs = computeRecommendations(lane, enemyPicks, pickedNames)

@@ -32,6 +32,7 @@ export function startChampSelectListener(ws: LeagueWebSocket, credentials: Crede
     if (enemyPicks.length > 0 && draftState.assignedPosition) {
       const pickedNames = new Set<string>()
       for (const m of [...draftState.myTeam, ...draftState.theirTeam]) {
+        if (m.cellId === draftState.localPlayerCellId) continue
         if (m.championId > 0 && m.championName) pickedNames.add(m.championName)
       }
       const recs = computeRecommendations(draftState.assignedPosition, enemyPicks, pickedNames)

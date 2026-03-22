@@ -230,6 +230,25 @@ describe('filterEnemiesByLane', () => {
     expect(result[0].championName).toBe('Darius')
   })
 
+  it('excludes unassigned enemies that cannot play the lane when other enemies have inferred positions', () => {
+    mockGetChampionRoles.mockImplementation((name: string) => {
+      if (name === 'Zed') return [{ lane: 'mid', pickRate: 95 }]
+      if (name === 'Jinx') return [{ lane: 'bottom', pickRate: 95 }]
+      if (name === 'Thresh') return [{ lane: 'support', pickRate: 90 }]
+      return []
+    })
+    const result = filterEnemiesByLane(
+      [
+        { championId: 238, championName: 'Zed', assignedPosition: 'middle' },
+        { championId: 222, championName: 'Jinx', assignedPosition: '' },
+        { championId: 412, championName: 'Thresh', assignedPosition: '' }
+      ],
+      'mid'
+    )
+    expect(result.length).toBe(1)
+    expect(result[0].championName).toBe('Zed')
+  })
+
   it('sorts assigned-position enemies before flex picks', () => {
     mockGetChampionRoles.mockImplementation((name: string) => {
       if (name === 'Garen') return [{ lane: 'top', pickRate: 30 }]

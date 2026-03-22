@@ -296,11 +296,22 @@ export function filterEnemiesByLane(
   const normalizedMyLane = normalizeLane(myLane)
   const picked = enemies.filter((e) => e.championId > 0)
 
+  const anyInferred = picked.some((e) => e.assignedPosition && normalizeLane(e.assignedPosition))
+
   const relevant = picked.filter((e) => {
     const inferredLane = e.assignedPosition ? normalizeLane(e.assignedPosition) : ''
-    if (inferredLane && inferredLane !== normalizedMyLane) return false
+
     if (inferredLane === normalizedMyLane) return true
-    return canPlayLane(e.championName, normalizedMyLane)
+    if (inferredLane && inferredLane !== normalizedMyLane) return false
+
+    // No inferred position — check if champion can play our lane
+    if (canPlayLane(e.championName, normalizedMyLane)) return true
+
+    // If other enemies have inferred positions, exclude unknowns that
+    // can't play our lane rather than including everyone as a fallback
+    if (anyInferred) return false
+
+    return false
   })
 
   const toReturn = relevant.length > 0 ? relevant : picked
