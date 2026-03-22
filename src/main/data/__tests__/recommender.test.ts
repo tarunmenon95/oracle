@@ -156,18 +156,53 @@ describe('filterEnemiesByLane', () => {
     expect(result).toEqual([{ championId: 122, championName: 'Darius' }])
   })
 
-  it('includes enemies that can play the lane via role data', () => {
+  it('excludes enemies inferred to a different lane even if they can flex', () => {
     mockGetChampionRoles.mockImplementation((name: string) => {
       if (name === 'Garen') return [{ lane: 'top', pickRate: 10 }, { lane: 'mid', pickRate: 60 }]
       return []
     })
     const result = filterEnemiesByLane(
       [
-        { championId: 86, championName: 'Garen', assignedPosition: 'middle' }
+        { championId: 86, championName: 'Garen', assignedPosition: 'middle' },
+        { championId: 122, championName: 'Darius', assignedPosition: 'top' }
+      ],
+      'top'
+    )
+    expect(result.length).toBe(1)
+    expect(result[0].championName).toBe('Darius')
+  })
+
+  it('includes unassigned enemies that can play the lane via role data', () => {
+    mockGetChampionRoles.mockImplementation((name: string) => {
+      if (name === 'Garen') return [{ lane: 'top', pickRate: 10 }, { lane: 'mid', pickRate: 60 }]
+      return []
+    })
+    const result = filterEnemiesByLane(
+      [
+        { championId: 86, championName: 'Garen', assignedPosition: '' }
       ],
       'top'
     )
     expect(result.some((e) => e.championName === 'Garen')).toBe(true)
+  })
+
+  it('narrows matchups as draft progresses and positions are inferred', () => {
+    mockGetChampionRoles.mockImplementation((name: string) => {
+      if (name === 'Diana') return [{ lane: 'mid', pickRate: 50 }, { lane: 'jungle', pickRate: 40 }]
+      if (name === 'Syndra') return [{ lane: 'mid', pickRate: 95 }]
+      if (name === 'LeeSin') return [{ lane: 'jungle', pickRate: 90 }]
+      return []
+    })
+    const result = filterEnemiesByLane(
+      [
+        { championId: 131, championName: 'Diana', assignedPosition: 'jungle' },
+        { championId: 134, championName: 'Syndra', assignedPosition: 'middle' },
+        { championId: 64, championName: 'LeeSin', assignedPosition: 'jungle' }
+      ],
+      'mid'
+    )
+    expect(result.length).toBe(1)
+    expect(result[0].championName).toBe('Syndra')
   })
 
   it('falls back to all picked enemies when no lane data matches', () => {
@@ -395,5 +430,31 @@ describe('computeRecommendations', () => {
 
     const result = computeRecommendations('top', [{ championId: 122, championName: 'Darius' }])
     expect(result[0].score).toBe(50)
+  })
+
+  it('excludes champions already picked by either team', () => {
+    mockGetChampionPool.mockReturnValue([
+      { champion: 'Aatrox', lanes: 'top', masteryPoints: 0, gamesPlayed: 0 },
+      { champion: 'Fiora', lanes: 'top', masteryPoints: 0, gamesPlayed: 0 },
+      { champion: 'Darius', lanes: 'top', masteryPoints: 0, gamesPlayed: 0 }
+    ])
+    mockGetChampionRoles.mockReturnValue([])
+    setupMockDb([])
+
+    const picked = new Set(['Darius', 'Fiora'])
+    const result = computeRecommendations('top', [{ championId: 122, championName: 'Darius' }], picked)
+    expect(result.length).toBe(1)
+    expect(result[0].championName).toBe('Aatrox')
+  })
+
+  it('works normally when pickedChampionNames is not provided', () => {
+    mockGetChampionPool.mockReturnValue([
+      { champion: 'Aatrox', lanes: 'top', masteryPoints: 0, gamesPlayed: 0 }
+    ])
+    mockGetChampionRoles.mockReturnValue([])
+    setupMockDb([])
+
+    const result = computeRecommendations('top', [{ championId: 122, championName: 'Darius' }])
+    expect(result.length).toBe(1)
   })
 })

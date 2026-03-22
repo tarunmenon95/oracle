@@ -4,9 +4,10 @@
   "description": "Oracle — a League of Legends draft assistant that recommends champions from your pool based on the enemy team",
   "main": "./out/main/index.js",
   "scripts": {
-    "dev": "electron-vite dev",
+    "dev": "DEV_MOCK=1 electron-vite dev",
     "build": "electron-vite build",
     "start": "electron-vite preview",
+    "prod": "electron-vite build && electron-vite preview",
     "package": "electron-vite build && electron-builder --mac",
     "package:win": "electron-vite build && electron-builder --win",
     "rebuild": "electron-rebuild -f -w better-sqlite3",

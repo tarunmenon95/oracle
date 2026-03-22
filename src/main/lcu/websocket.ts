@@ -4,6 +4,7 @@ import type { LcuChampSelectSession, ParsedDraftState, ParsedTeamMember } from '
 import { getChampionNameById } from '../data/ddragon'
 import { getMainWindow } from '../index'
 import { computeRecommendations, filterEnemiesByLane, inferTeamPositions, laneToLcuPosition } from '../data/recommender'
+import { prefetchBuilds } from '../scraper/opgg-build'
 
 let isListening = false
 
@@ -29,8 +30,19 @@ export function startChampSelectListener(ws: LeagueWebSocket, credentials: Crede
     const enemyPicks = filterEnemiesByLane(draftState.theirTeam, draftState.assignedPosition)
 
     if (enemyPicks.length > 0 && draftState.assignedPosition) {
-      const recs = computeRecommendations(draftState.assignedPosition, enemyPicks)
+      const pickedNames = new Set<string>()
+      for (const m of [...draftState.myTeam, ...draftState.theirTeam]) {
+        if (m.championId > 0 && m.championName) pickedNames.add(m.championName)
+      }
+      const recs = computeRecommendations(draftState.assignedPosition, enemyPicks, pickedNames)
       win.webContents.send('recommendations:update', recs)
+
+      const lane = draftState.assignedPosition
+      const topRecs = recs.slice(0, 3)
+      const matchups = topRecs.flatMap((r) =>
+        r.matchups.map((m) => ({ champion: r.championName, opponent: m.enemyChampionName, lane }))
+      )
+      if (matchups.length > 0) prefetchBuilds(matchups)
     }
   })
 

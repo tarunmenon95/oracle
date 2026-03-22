@@ -4,6 +4,10 @@ import { championLoading, championIcon, nameToInternalId, laneIcon } from '../ut
 
 type Props = {
   draftState: DraftState
+  matchupEnemies: Set<string>
+  addedEnemies: Set<string>
+  removedEnemies: Set<string>
+  onToggleEnemy: (name: string) => void
 }
 
 type RolesMap = Record<string, { lane: string; pickRate: number }[]>
@@ -14,7 +18,7 @@ const POSITION_LABELS: Record<string, string> = {
 
 const FLEX_THRESHOLD = 5
 
-export function DraftView({ draftState }: Props) {
+export function DraftView({ draftState, matchupEnemies, addedEnemies, removedEnemies, onToggleEnemy }: Props) {
   const [rolesMap, setRolesMap] = useState<RolesMap>({})
 
   useEffect(() => {
@@ -85,18 +89,26 @@ export function DraftView({ draftState }: Props) {
         side="red"
         rolesMap={rolesMap}
         bans={draftState.theirBans}
+        matchupEnemies={matchupEnemies}
+        addedEnemies={addedEnemies}
+        removedEnemies={removedEnemies}
+        onToggleEnemy={onToggleEnemy}
       />
     </div>
   )
 }
 
-function TeamSection({ label, members, localCellId, side, rolesMap, bans }: {
+function TeamSection({ label, members, localCellId, side, rolesMap, bans, matchupEnemies, addedEnemies, removedEnemies, onToggleEnemy }: {
   label: string
   members: TeamMember[]
   localCellId: number
   side: 'blue' | 'red'
   rolesMap: RolesMap
   bans: number[]
+  matchupEnemies?: Set<string>
+  addedEnemies?: Set<string>
+  removedEnemies?: Set<string>
+  onToggleEnemy?: (name: string) => void
 }) {
   const accentColor = side === 'blue' ? 'var(--accent-blue)' : 'var(--accent-red)'
 
@@ -114,16 +126,26 @@ function TeamSection({ label, members, localCellId, side, rolesMap, bans }: {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        {members.length > 0 ? members.map((m, i) => (
-          <MemberRow
-            key={m.cellId}
-            member={m}
-            isLocal={m.cellId === localCellId}
-            side={side}
-            rolesMap={rolesMap}
-            delay={i * 0.05}
-          />
-        )) : (
+        {members.length > 0 ? members.map((m, i) => {
+          const hasPick = m.championId > 0 && m.championName
+          const isInMatchups = matchupEnemies?.has(m.championName) ?? false
+          const isAdded = addedEnemies?.has(m.championName) ?? false
+          const isRemoved = removedEnemies?.has(m.championName) ?? false
+          const isIncluded = (isInMatchups && !isRemoved) || isAdded
+
+          return (
+            <MemberRow
+              key={m.cellId}
+              member={m}
+              isLocal={m.cellId === localCellId}
+              side={side}
+              rolesMap={rolesMap}
+              delay={i * 0.05}
+              isExcluded={hasPick && !isIncluded}
+              onToggle={onToggleEnemy && hasPick ? () => onToggleEnemy(m.championName) : undefined}
+            />
+          )
+        }) : (
           Array.from({ length: 5 }).map((_, i) => (
             <div key={i} style={{
               height: 56,
@@ -175,12 +197,14 @@ function TeamSection({ label, members, localCellId, side, rolesMap, bans }: {
   )
 }
 
-function MemberRow({ member: m, isLocal, side, rolesMap, delay }: {
+function MemberRow({ member: m, isLocal, side, rolesMap, delay, isExcluded, onToggle }: {
   member: TeamMember
   isLocal: boolean
   side: 'blue' | 'red'
   rolesMap: RolesMap
   delay: number
+  isExcluded?: boolean
+  onToggle?: () => void
 }) {
   const accentColor = side === 'blue' ? 'var(--accent-blue)' : 'var(--accent-red)'
   const dimColor = side === 'blue' ? 'var(--accent-blue-dim)' : 'var(--accent-red-dim)'
@@ -201,7 +225,8 @@ function MemberRow({ member: m, isLocal, side, rolesMap, delay }: {
       animation: `slideIn 0.3s ease ${delay}s both`,
       position: 'relative',
       overflow: 'hidden',
-      transition: 'background 0.15s',
+      transition: 'background 0.15s, opacity 0.2s',
+      opacity: isExcluded ? 0.45 : 1,
       ...(isLocal ? { boxShadow: `0 0 12px ${dimColor}` } : {})
     }}>
       {/* Champion portrait */}
@@ -277,6 +302,33 @@ function MemberRow({ member: m, isLocal, side, rolesMap, delay }: {
         }}>
           YOU
         </div>
+      )}
+
+      {onToggle && (
+        <button
+          onClick={onToggle}
+          title={isExcluded ? 'Include in matchups' : 'Exclude from matchups'}
+          style={{
+            width: 22,
+            height: 22,
+            borderRadius: '50%',
+            border: `1.5px solid ${isExcluded ? 'var(--accent-green)' : 'var(--accent-red)'}`,
+            background: isExcluded ? 'rgba(46, 204, 113, 0.12)' : 'rgba(231, 76, 60, 0.12)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            flexShrink: 0,
+            padding: 0,
+            fontSize: '14px',
+            fontWeight: 700,
+            lineHeight: 1,
+            color: isExcluded ? 'var(--accent-green)' : 'var(--accent-red)',
+            transition: 'background 0.15s, border-color 0.15s, color 0.15s'
+          }}
+        >
+          {isExcluded ? '+' : '\u2212'}
+        </button>
       )}
     </div>
   )

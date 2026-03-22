@@ -1,6 +1,7 @@
 import { getMainWindow } from './index'
 import { getCurrentPatch, getChampionInternalId } from './data/ddragon'
 import { computeRecommendations, filterEnemiesByLane, inferTeamPositions, laneToLcuPosition } from './data/recommender'
+import { prefetchBuilds } from './scraper/opgg-build'
 
 const DDRAGON = 'https://ddragon.leagueoflegends.com/cdn'
 
@@ -139,9 +140,19 @@ export function sendMockDraft(): void {
 
   const lane = scenario.assignedPosition
   const enemyPicks = filterEnemiesByLane(theirTeam, lane)
-  const recs = computeRecommendations(lane, enemyPicks)
+  const pickedNames = new Set<string>()
+  for (const m of [...scenario.myTeam, ...theirTeam]) {
+    if (m.championId > 0 && m.championName) pickedNames.add(m.championName)
+  }
+  const recs = computeRecommendations(lane, enemyPicks, pickedNames)
 
   win.webContents.send('recommendations:update', recs)
+
+  const topRecs = recs.slice(0, 3)
+  const matchups = topRecs.flatMap((r) =>
+    r.matchups.map((m) => ({ champion: r.championName, opponent: m.enemyChampionName, lane }))
+  )
+  if (matchups.length > 0) prefetchBuilds(matchups)
 }
 
 export function startDevMock(): void {

@@ -196,24 +196,6 @@ function FeaturedCard({ rec, isSelected, onSelect }: { rec: Recommendation; isSe
               boxShadow: '0 0 20px rgba(200, 170, 110, 0.25)'
             }}
           />
-          <div style={{
-            position: 'absolute',
-            top: -6,
-            left: -6,
-            width: 24,
-            height: 24,
-            borderRadius: '50%',
-            background: 'var(--accent-gold)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '12px',
-            fontWeight: 800,
-            color: 'var(--bg-primary)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
-          }}>
-            1
-          </div>
         </div>
 
         {/* Info */}

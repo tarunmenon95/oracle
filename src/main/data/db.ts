@@ -47,6 +47,15 @@ export function getDb(): Database.Database {
       PRIMARY KEY (champion, lane)
     );
 
+    CREATE TABLE IF NOT EXISTS build_cache (
+      champion TEXT NOT NULL,
+      opponent TEXT NOT NULL,
+      lane TEXT NOT NULL,
+      data TEXT NOT NULL,
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      PRIMARY KEY (champion, opponent, lane)
+    );
+
     CREATE INDEX IF NOT EXISTS idx_matchups_champion_lane ON matchups(champion, lane);
     CREATE INDEX IF NOT EXISTS idx_matchups_opponent_lane ON matchups(opponent, lane);
     CREATE INDEX IF NOT EXISTS idx_pool_champion ON champion_pool(champion);
@@ -163,6 +172,26 @@ export function getChampionRoles(champion: string): { lane: string; pickRate: nu
   return database.prepare(
     'SELECT lane, pick_rate as pickRate FROM champion_roles WHERE champion = ? ORDER BY pick_rate DESC'
   ).all(champion) as { lane: string; pickRate: number }[]
+}
+
+const BUILD_CACHE_TTL_S = 6 * 60 * 60
+
+export function getCachedBuild(champion: string, opponent: string, lane: string): string | null {
+  const database = getDb()
+  const row = database.prepare(
+    'SELECT data FROM build_cache WHERE champion = ? AND opponent = ? AND lane = ? AND updated_at > unixepoch() - ?'
+  ).get(champion, opponent, lane, BUILD_CACHE_TTL_S) as { data: string } | undefined
+  return row?.data ?? null
+}
+
+export function setCachedBuild(champion: string, opponent: string, lane: string, data: string): void {
+  const database = getDb()
+  database.prepare(`
+    INSERT INTO build_cache (champion, opponent, lane, data, updated_at)
+    VALUES (?, ?, ?, ?, unixepoch())
+    ON CONFLICT (champion, opponent, lane)
+    DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at
+  `).run(champion, opponent, lane, data)
 }
 
 export function getChampionPool(lane?: string): { champion: string; lanes: string; masteryPoints: number; gamesPlayed: number; winRate: number | null; kda: number | null }[] {

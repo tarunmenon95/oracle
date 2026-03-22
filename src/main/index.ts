@@ -6,6 +6,8 @@ import { initDdragon } from './data/ddragon'
 import { startScheduler } from './scraper/scheduler'
 import { startDevMock } from './dev-mock'
 
+export const devMockEnabled = !!process.env['DEV_MOCK']
+
 let mainWindow: BrowserWindow | null = null
 
 const isMac = process.platform === 'darwin'
@@ -67,7 +69,7 @@ app.whenReady().then(async () => {
   }
   startScheduler()
 
-  if (is.dev) {
+  if (devMockEnabled) {
     startDevMock()
   }
 

@@ -40,7 +40,11 @@ type MatchupRow = {
   source: string
 }
 
-export function computeRecommendations(lane: string, enemyPicks: EnemyPick[]): Recommendation[] {
+export function computeRecommendations(
+  lane: string,
+  enemyPicks: EnemyPick[],
+  pickedChampionNames?: Set<string>
+): Recommendation[] {
   const normalizedLane = normalizeLane(lane)
   const pool = getChampionPool(normalizedLane)
 
@@ -51,11 +55,13 @@ export function computeRecommendations(lane: string, enemyPicks: EnemyPick[]): R
 
   const allPool = [...new Map(pool.map((p) => [p.champion, p])).values()]
 
-  const uniquePool = allPool.filter((p) => {
-    const roles = getChampionRoles(p.champion)
-    if (roles.length === 0) return true
-    return roles.some((r) => r.lane === normalizedLane && r.pickRate >= FLEX_THRESHOLD)
-  })
+  const uniquePool = allPool
+    .filter((p) => !pickedChampionNames || !pickedChampionNames.has(p.champion))
+    .filter((p) => {
+      const roles = getChampionRoles(p.champion)
+      if (roles.length === 0) return true
+      return roles.some((r) => r.lane === normalizedLane && r.pickRate >= FLEX_THRESHOLD)
+    })
 
   if (uniquePool.length === 0) return []
 
@@ -291,7 +297,9 @@ export function filterEnemiesByLane(
   const picked = enemies.filter((e) => e.championId > 0)
 
   const relevant = picked.filter((e) => {
-    if (e.assignedPosition && normalizeLane(e.assignedPosition) === normalizedMyLane) return true
+    const inferredLane = e.assignedPosition ? normalizeLane(e.assignedPosition) : ''
+    if (inferredLane && inferredLane !== normalizedMyLane) return false
+    if (inferredLane === normalizedMyLane) return true
     return canPlayLane(e.championName, normalizedMyLane)
   })
 

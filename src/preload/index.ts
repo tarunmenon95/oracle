@@ -59,10 +59,43 @@ export type AppSettings = {
   onboardingComplete: boolean
 }
 
+export type RuneInfo = {
+  name: string
+  icon: string
+}
+
+export type RuneOption = {
+  name: string
+  icon: string
+  isActive: boolean
+}
+
+export type RuneSetup = {
+  primaryTree: RuneInfo
+  secondaryTree: RuneInfo
+  primaryRows: RuneOption[][]
+  secondaryRows: RuneOption[][]
+  shardRows: RuneOption[][]
+  winRate: number
+  gamesPlayed: number
+}
+
+export type ItemBuild = {
+  items: { id: number; name: string; icon: string }[]
+  winRate: number
+  gamesPlayed: number
+  pickRate: number
+}
+
+export type MatchupBuildData = {
+  runes: RuneSetup | null
+  items: ItemBuild[]
+}
+
 export type ConnectionStatus = 'disconnected' | 'connected' | 'in-champ-select'
 
 const api = {
-  isDev: process.env.NODE_ENV === 'development' || !!process.env['ELECTRON_RENDERER_URL'],
+  isDev: !!process.env['DEV_MOCK'],
   platform: process.platform as 'darwin' | 'win32' | 'linux',
 
 
@@ -105,6 +138,16 @@ const api = {
 
   refreshMatchupData: (): Promise<void> => ipcRenderer.invoke('scraper:refresh'),
   getScraperStatus: (): Promise<{ lastRefresh: number | null; isRunning: boolean }> => ipcRenderer.invoke('scraper:status'),
+
+  getMatchupBuild: (champion: string, opponent: string, lane: string): Promise<MatchupBuildData> =>
+    ipcRenderer.invoke('build:get', champion, opponent, lane),
+
+  recomputeRecommendations: (
+    lane: string,
+    enemies: { championId: number; championName: string }[],
+    pickedNames: string[]
+  ): Promise<Recommendation[]> =>
+    ipcRenderer.invoke('recommendations:recompute', lane, enemies, pickedNames),
 
   connectToLcu: (): Promise<void> => ipcRenderer.invoke('lcu:connect'),
   disconnectFromLcu: (): Promise<void> => ipcRenderer.invoke('lcu:disconnect'),
