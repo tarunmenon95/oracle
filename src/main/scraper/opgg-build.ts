@@ -1,5 +1,5 @@
 import { extractRscPayloads, findJsonInPayload, opggSlug } from './opgg'
-import { fetchPage } from './shared'
+import { fetchPage, normalizeLane } from './shared'
 import { getCurrentPatch } from '../data/ddragon'
 import { patchToOpgg } from '../data/settings'
 import { getCachedBuild, setCachedBuild } from '../data/db'
@@ -53,17 +53,18 @@ export async function scrapeMatchupBuild(
   lane: string,
   patch?: string
 ): Promise<MatchupBuildData> {
-  const cacheKey = `${champion}|${opponent}|${lane}`
+  const normalLane = normalizeLane(lane)
+  const cacheKey = `${champion}|${opponent}|${normalLane}`
 
   try {
-    const cached = getCachedBuild(champion, opponent, lane)
+    const cached = getCachedBuild(champion, opponent, normalLane)
     if (cached) return JSON.parse(cached) as MatchupBuildData
   } catch { /* db not ready or corrupt row */ }
 
   const existing = inFlight.get(cacheKey)
   if (existing) return existing
 
-  const promise = fetchAndCacheBuild(champion, opponent, lane, patch)
+  const promise = fetchAndCacheBuild(champion, opponent, normalLane, patch)
   inFlight.set(cacheKey, promise)
   try {
     return await promise
